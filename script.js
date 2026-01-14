@@ -134,19 +134,20 @@ function updatePlayersList() {
         const nickCount = stats?.nicknames?.length || 0;
         
         return `
-        <li>
-            <span class="player-name">
-                ${player}
-                ${activeNick !== player ? `<span class="active-nick"> → ${activeNick}</span>` : ''}
-                ${kdText}
-                ${nickCount > 1 ? `<span class="nick-count"> (${nickCount} nicks)</span>` : ''}
-            </span>
-            <div class="player-actions">
-                <button class="manage-nick-btn" onclick="manageNicknames('${player}')" title="Manage nicknames">👤</button>
-                <button class="remove-btn" onclick="removePlayer('${player}')">×</button>
-            </div>
-        </li>
-    `}).join('');
+            <li>
+                <span class="player-name">
+                    ${player}
+                    ${activeNick !== player ? `<span class="active-nick"> → ${activeNick}</span>` : ''}
+                    ${kdText}
+                    ${nickCount > 1 ? `<span class="nick-count"> (${nickCount} nicks)</span>` : ''}
+                </span>
+                <div class="player-actions">
+                    <button class="manage-nick-btn" onclick="manageNicknames('${player}')" title="Manage nicknames">👤</button>
+                    <button class="remove-btn" onclick="removePlayer('${player}')">×</button>
+                </div>
+            </li>
+        `;
+    }).join('');
     
     // Update ranked list
     updateRankedPlayersList();
