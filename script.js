@@ -44,13 +44,10 @@ function loadMockPlayers() {
             };
         }
     });
-    console.log('✅ Loaded 20 mock players for testing');
 }
 
 // Initialize on page load
 window.addEventListener('load', () => {
-    console.log('🚀 Page loaded, initializing...');
-    
     // Always load mock players data FIRST (synchronous)
     MOCK_PLAYERS.forEach(player => {
         if (!playerStats[player.name]) {
@@ -69,7 +66,6 @@ window.addEventListener('load', () => {
     players = [];
     
     // Show rankings IMMEDIATELY with mock data
-    console.log('📊 Initializing rankings with', MOCK_PLAYERS.length, 'players');
     updateRankedPlayersList();
     updatePlayersList();
     
@@ -368,8 +364,6 @@ function updateRankedPlayersList() {
         return;
     }
     
-    console.log('Updating ranked players list...', MOCK_PLAYERS.length, 'players');
-    
     // Always show all mock players in rankings, sorted by K/D
     const allRankedPlayers = MOCK_PLAYERS.map(p => ({
         name: p.name,
@@ -381,8 +375,6 @@ function updateRankedPlayersList() {
             active_nickname: p.name
         }
     })).sort((a, b) => b.stats.average_kd - a.stats.average_kd);
-    
-    console.log('Sorted players:', allRankedPlayers.length);
     
     rankedList.innerHTML = allRankedPlayers.map((player, index) => {
         const isTop3 = index < 3;
