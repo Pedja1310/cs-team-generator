@@ -357,7 +357,7 @@ function showMatchResultsEntry(tTeam, ctTeam) {
     const matchResultsSection = document.getElementById('matchResultsSection');
     const playerStatsInput = document.getElementById('playerStatsInput');
     
-    selectedWinner = null; - use active nickname
+    selectedWinner = null; // use active nickname
     const allPlayers = [...tTeam, ...ctTeam];
     playerStatsInput.innerHTML = `
         <div class="stats-grid">
@@ -373,11 +373,8 @@ function showMatchResultsEntry(tTeam, ctTeam) {
                         <input type="number" id="deaths-${player}" placeholder="Deaths" min="0" value="0" />
                     </div>
                 </div>
-            `}           <span>/</span>
-                        <input type="number" id="deaths-${player}" placeholder="Deaths" min="0" value="0" />
-                    </div>
-                </div>
-            `).join('')}
+            `;
+            }).join('')}
         </div>
     `;
     
