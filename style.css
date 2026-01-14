@@ -669,7 +669,11 @@ button {
     }
     
     .sidebar {
-        order: -1;
+        order: 2;
+    }
+    
+    .main-content {
+        order: 1;
     }
     
     .ranked-players {
