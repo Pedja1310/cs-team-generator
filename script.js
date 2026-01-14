@@ -3,6 +3,8 @@ let playerStats = {};
 let isSupabaseEnabled = false;
 let currentMatch = null; // Store current match data
 let selectedWinner = null;
+let currentRankingsPage = 1;
+const PLAYERS_PER_PAGE = 5;
 
 // Mock players for testing (not saved to database)
 const MOCK_PLAYERS = [
@@ -376,14 +378,30 @@ function updateRankedPlayersList() {
         }
     })).sort((a, b) => b.stats.average_kd - a.stats.average_kd);
     
-    rankedList.innerHTML = allRankedPlayers.map((player, index) => {
-        const isTop3 = index < 3;
+    // Calculate pagination
+    const totalPages = Math.ceil(allRankedPlayers.length / PLAYERS_PER_PAGE);
+    const startIndex = (currentRankingsPage - 1) * PLAYERS_PER_PAGE;
+    const endIndex = startIndex + PLAYERS_PER_PAGE;
+    const playersToShow = allRankedPlayers.slice(startIndex, endIndex);
+    
+    // Update pagination info
+    const pageInfo = document.getElementById('rankingsPageInfo');
+    const prevBtn = document.getElementById('prevRankingsBtn');
+    const nextBtn = document.getElementById('nextRankingsBtn');
+    
+    if (pageInfo) pageInfo.textContent = `${currentRankingsPage} / ${totalPages}`;
+    if (prevBtn) prevBtn.disabled = currentRankingsPage === 1;
+    if (nextBtn) nextBtn.disabled = currentRankingsPage === totalPages;
+    
+    rankedList.innerHTML = playersToShow.map((player, pageIndex) => {
+        const globalIndex = startIndex + pageIndex;
+        const isTop3 = globalIndex < 3;
         const displayName = player.stats.active_nickname || player.name;
         const isInMatch = players.includes(player.name);
         
         return `
             <div class="ranked-player-item ${isInMatch ? 'in-match' : ''}" onclick="togglePlayerInMatch('${player.name}')" style="cursor: pointer;">
-                <div class="rank-number ${isTop3 ? 'top3' : ''}">${index + 1}</div>
+                <div class="rank-number ${isTop3 ? 'top3' : ''}">${globalIndex + 1}</div>
                 <div class="ranked-player-info">
                     <div class="ranked-player-name">
                         ${displayName}
@@ -908,6 +926,24 @@ async function submitPlayerStats(event) {
     // Update UI
     updateRankedPlayersList();
     closeAddStatsModal();
+}
+
+// Pagination functions for rankings
+function nextRankingsPage() {
+    const totalPlayers = MOCK_PLAYERS.length;
+    const totalPages = Math.ceil(totalPlayers / PLAYERS_PER_PAGE);
+    
+    if (currentRankingsPage < totalPages) {
+        currentRankingsPage++;
+        updateRankedPlayersList();
+    }
+}
+
+function previousRankingsPage() {
+    if (currentRankingsPage > 1) {
+        currentRankingsPage--;
+        updateRankedPlayersList();
+    }
 }
 
 // Initialize
