@@ -15,10 +15,9 @@
             <h1>🎮 Smederevski Kanter</h1>
             
             <div class="input-section">
-            <h2>Add Players</h2>
+            <h2>Match Players</h2>
             <div class="input-group">
-                <input type="text" id="playerInput" placeholder="Enter player name" />
-                <button onclick="addPlayer()">Add Player</button>
+                <button onclick="openPlayerModal()" class="select-players-btn">📋 Manage Players</button>
             </div>
             
             <div class="players-list">
@@ -75,9 +74,41 @@
     <div class="sidebar">
         <div class="ranked-players">
             <h2>🏆 Player Rankings</h2>
+            <div id="rankingsLoader" class="rankings-loader" style="display: none;">
+                <div class="loader-spinner"></div>
+                <p>Loading players...</p>
+            </div>
             <div id="rankedPlayersList"></div>
         </div>
     </div>
 </div>
+
+<!-- Player Selection Modal -->
+<div id="playerModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Manage Players for Match</h2>
+            <button class="close-modal" onclick="closePlayerModal()">×</button>
+        </div>
+        <div class="modal-search">
+            <input 
+                type="text" 
+                id="playerSearchInput" 
+                placeholder="🔍 Search players..." 
+                oninput="filterPlayers(this.value)"
+            />
+        </div>
+        <div class="modal-body">
+            <div class="player-selection-grid" id="playerSelectionGrid">
+                <!-- Players will be dynamically added here -->
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button onclick="addSelectedPlayers()" class="add-selected-btn">Add Selected Players</button>
+            <button onclick="closePlayerModal()" class="cancel-btn">Cancel</button>
+        </div>
+    </div>
+</div>
+
 </body>
 </html>

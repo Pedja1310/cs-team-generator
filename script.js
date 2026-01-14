@@ -1,16 +1,5 @@
-let players = ['NiKo', 's1mple', 'ZywOo', 'device', 'electronic', 'm0NESY', 'Twistzz', 'ropz', 'frozen', 'jks'];
-let playerStats = {
-    'NiKo': { total_kills: 245, total_deaths: 198, games_played: 12, average_kd: 1.24, nicknames: ['NiKo', 'Nikola'], active_nickname: 'NiKo' },
-    's1mple': { total_kills: 312, total_deaths: 205, games_played: 15, average_kd: 1.52, nicknames: ['s1mple', 'Sasha'], active_nickname: 's1mple' },
-    'ZywOo': { total_kills: 289, total_deaths: 211, games_played: 14, average_kd: 1.37, nicknames: ['ZywOo', 'Mathieu'], active_nickname: 'ZywOo' },
-    'device': { total_kills: 198, total_deaths: 187, games_played: 10, average_kd: 1.06, nicknames: ['device', 'dev1ce'], active_nickname: 'device' },
-    'electronic': { total_kills: 221, total_deaths: 203, games_played: 11, average_kd: 1.09, nicknames: ['electronic', 'Denis'], active_nickname: 'electronic' },
-    'm0NESY': { total_kills: 267, total_deaths: 189, games_played: 13, average_kd: 1.41, nicknames: ['m0NESY', 'Ilya'], active_nickname: 'm0NESY' },
-    'Twistzz': { total_kills: 234, total_deaths: 201, games_played: 12, average_kd: 1.16, nicknames: ['Twistzz', 'Russel'], active_nickname: 'Twistzz' },
-    'ropz': { total_kills: 210, total_deaths: 195, games_played: 11, average_kd: 1.08, nicknames: ['ropz', 'Robin'], active_nickname: 'ropz' },
-    'frozen': { total_kills: 188, total_deaths: 176, games_played: 10, average_kd: 1.07, nicknames: ['frozen', 'David'], active_nickname: 'frozen' },
-    'jks': { total_kills: 203, total_deaths: 198, games_played: 11, average_kd: 1.03, nicknames: ['jks', 'Justin'], active_nickname: 'jks' }
-};
+let players = [];
+let playerStats = {};
 let isSupabaseEnabled = false;
 let currentMatch = null; // Store current match data
 let selectedWinner = null;
@@ -26,55 +15,203 @@ const MOCK_PLAYERS = [
     { name: 'Twistzz', kills: 234, deaths: 201, games: 12, kd: 1.16 },
     { name: 'ropz', kills: 210, deaths: 195, games: 11, kd: 1.08 },
     { name: 'frozen', kills: 188, deaths: 176, games: 10, kd: 1.07 },
-    { name: 'jks', kills: 203, deaths: 198, games: 11, kd: 1.03 }
+    { name: 'jks', kills: 203, deaths: 198, games: 11, kd: 1.03 },
+    { name: 'rain', kills: 256, deaths: 209, games: 13, kd: 1.22 },
+    { name: 'b1t', kills: 278, deaths: 195, games: 14, kd: 1.43 },
+    { name: 'Jame', kills: 192, deaths: 183, games: 10, kd: 1.05 },
+    { name: 'NAF', kills: 241, deaths: 212, games: 12, kd: 1.14 },
+    { name: 'stavn', kills: 229, deaths: 198, games: 11, kd: 1.16 },
+    { name: 'Spinx', kills: 264, deaths: 201, games: 13, kd: 1.31 },
+    { name: 'YEKINDAR', kills: 273, deaths: 218, games: 14, kd: 1.25 },
+    { name: 'brollan', kills: 215, deaths: 203, games: 11, kd: 1.06 },
+    { name: 'nipl', kills: 207, deaths: 199, games: 11, kd: 1.04 },
+    { name: 'sh1ro', kills: 285, deaths: 201, games: 14, kd: 1.42 }
 ];
 
 function loadMockPlayers() {
     MOCK_PLAYERS.forEach(player => {
-        players.push(player.name);
-        playerStats[player.name] = {
-            total_kills: player.kills,
-            total_deaths: player.deaths,
-            games_played: player.games,
-            average_kd: player.kd
-        };
+        if (!players.includes(player.name)) {
+            players.push(player.name);
+        }
+        if (!playerStats[player.name]) {
+            playerStats[player.name] = {
+                total_kills: player.kills,
+                total_deaths: player.deaths,
+                games_played: player.games,
+                average_kd: player.kd,
+                nicknames: [player.name],
+                active_nickname: player.name
+            };
+        }
     });
-    console.log('✅ Loaded 10 mock players for testing');
+    console.log('✅ Loaded 20 mock players for testing');
 }
 
 // Initialize on page load
-window.addEventListener('DOMContentLoaded', async () => {
-    isSupabaseEnabled = initSupabase();
+window.addEventListener('load', () => {
+    console.log('🚀 Page loaded, initializing...');
     
+    // Always load mock players data FIRST (synchronous)
+    MOCK_PLAYERS.forEach(player => {
+        if (!playerStats[player.name]) {
+            playerStats[player.name] = {
+                total_kills: player.kills,
+                total_deaths: player.deaths,
+                games_played: player.games,
+                average_kd: player.kd,
+                nicknames: [player.name],
+                active_nickname: player.name
+            };
+        }
+    });
+    
+    // Initialize with NO players selected by default
+    players = [];
+    
+    // Show rankings IMMEDIATELY with mock data
+    console.log('📊 Initializing rankings with', MOCK_PLAYERS.length, 'players');
+    updateRankedPlayersList();
+    updatePlayersList();
+    
+    // Populate player selection modal
+    populatePlayerModal();
+    
+    // Then load Supabase data asynchronously (non-blocking)
+    isSupabaseEnabled = initSupabase();
     if (isSupabaseEnabled) {
-        // Load players from Supabase
+        showLoader();
+        loadSupabaseData();
+    }
+});
+
+function showLoader() {
+    const loader = document.getElementById('rankingsLoader');
+    if (loader) loader.style.display = 'block';
+}
+
+function hideLoader() {
+    const loader = document.getElementById('rankingsLoader');
+    if (loader) loader.style.display = 'none';
+}
+
+async function loadSupabaseData() {
+    try {
         const loadedPlayers = await loadPlayers();
         if (loadedPlayers.length > 0) {
             loadedPlayers.forEach(player => {
-                players.push(player.name);
+                if (!players.includes(player.name)) {
+                    players.push(player.name);
+                }
                 playerStats[player.name] = {
                     total_kills: player.total_kills || 0,
                     total_deaths: player.total_deaths || 0,
                     games_played: player.games_played || 0,
-                    average_kd: player.average_kd || 0
+                    average_kd: player.average_kd || 0,
+                    nicknames: player.nicknames || [player.name],
+                    active_nickname: player.active_nickname || player.name
                 };
             });
             updatePlayersList();
-        } else {
-            // Load mock players if no players in database
-            loadMockPlayers();
-            updatePlayersList();
+            updateRankedPlayersList();
         }
         updateSyncButton();
-    } else {
-        // Load mock players if Supabase is not enabled
-        loadMockPlayers();
-        updatePlayersList();
+    } catch (error) {
+        console.error('Failed to load Supabase data:', error);
+    } finally {
+        hideLoader();
+    }
+}
+
+// Player Selection Modal Functions
+function populatePlayerModal(searchTerm = '') {
+    const grid = document.getElementById('playerSelectionGrid');
+    
+    const filteredPlayers = MOCK_PLAYERS.filter(player => 
+        player.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    
+    if (filteredPlayers.length === 0) {
+        grid.innerHTML = '<div style="color: #888; text-align: center; padding: 20px; grid-column: 1/-1;">No players found</div>';
+        return;
     }
     
-    // Initialize ranked list on load
-    updateRankedPlayersList();
-});
+    grid.innerHTML = filteredPlayers.map(player => {
+        const stats = playerStats[player.name];
+        const kd = stats?.average_kd || player.kd;
+        const isSelected = players.includes(player.name);
+        
+        return `
+            <div class="player-checkbox-item ${isSelected ? 'selected' : ''}">
+                <input 
+                    type="checkbox" 
+                    id="player-${player.name}" 
+                    value="${player.name}"
+                    ${isSelected ? 'checked' : ''}
+                    onchange="togglePlayerSelection('${player.name}')"
+                />
+                <label for="player-${player.name}">
+                    <span class="player-checkbox-name">${player.name}</span>
+                    <span class="player-checkbox-kd">K/D: ${kd.toFixed(2)}</span>
+                </label>
+            </div>
+        `;
+    }).join('');
+}
+
+function openPlayerModal() {
+    populatePlayerModal();
+    document.getElementById('playerSearchInput').value = '';
+    document.getElementById('playerModal').style.display = 'flex';
+    document.getElementById('playerSearchInput').focus();
+}
+
+function closePlayerModal() {
+    document.getElementById('playerModal').style.display = 'none';
+}
+
+function filterPlayers(searchTerm) {
+    populatePlayerModal(searchTerm);
+}
+
+function togglePlayerSelection(playerName) {
+    const checkbox = document.getElementById(`player-${playerName}`);
+    const item = checkbox.closest('.player-checkbox-item');
+    
+    if (checkbox.checked) {
+        item.classList.add('selected');
+    } else {
+        item.classList.remove('selected');
+    }
+}
+
+function addSelectedPlayers() {
+    const checkboxes = document.querySelectorAll('#playerSelectionGrid input[type="checkbox"]:checked');
+    const selectedPlayers = Array.from(checkboxes).map(cb => cb.value);
+    
+    if (selectedPlayers.length === 0) {
+        alert('Molimo izaberite bar jednog igrača!');
+        return;
+    }
+    
+    // Add only new players
+    selectedPlayers.forEach(playerName => {
+        if (!players.includes(playerName)) {
+            players.push(playerName);
+        }
+    });
+    
+    // Remove players that were unchecked
+    players = players.filter(p => selectedPlayers.includes(p));
+    
+    updatePlayersList();
+    updateRankedPlayersList(); // Update rankings to reflect selection changes
+    closePlayerModal();
+    
+    // Save to Supabase if enabled
+    if (isSupabaseEnabled) {
+        savePlayers(players);
+    }
+}
 
 function addPlayer() {
     const input = document.getElementById('playerInput');
@@ -104,6 +241,7 @@ function addPlayer() {
 async function removePlayer(playerName) {
     players = players.filter(p => p !== playerName);
     updatePlayersList();
+    updateRankedPlayersList(); // Update rankings to reflect removed player
     
     // Delete from Supabase if enabled
     if (isSupabaseEnabled) {
@@ -225,40 +363,72 @@ function manageNicknames(playerName) {
 function updateRankedPlayersList() {
     const rankedList = document.getElementById('rankedPlayersList');
     
-    if (players.length === 0) {
-        rankedList.innerHTML = '<div style="color: #888; text-align: center; padding: 20px;">No players yet</div>';
+    if (!rankedList) {
+        console.error('❌ Element #rankedPlayersList not found!');
         return;
     }
     
-    // Sort players by K/D (descending)
-    const sortedPlayers = [...players].sort((a, b) => {
-        const kdA = playerStats[a]?.average_kd || 0;
-        const kdB = playerStats[b]?.average_kd || 0;
-        return kdB - kdA;
-    });
+    console.log('Updating ranked players list...', MOCK_PLAYERS.length, 'players');
     
-    rankedList.innerHTML = sortedPlayers.map((player, index) => {
-        const stats = playerStats[player] || { average_kd: 0, games_played: 0, total_kills: 0, total_deaths: 0, active_nickname: player };
+    // Always show all mock players in rankings, sorted by K/D
+    const allRankedPlayers = MOCK_PLAYERS.map(p => ({
+        name: p.name,
+        stats: playerStats[p.name] || {
+            average_kd: p.kd,
+            games_played: p.games,
+            total_kills: p.kills,
+            total_deaths: p.deaths,
+            active_nickname: p.name
+        }
+    })).sort((a, b) => b.stats.average_kd - a.stats.average_kd);
+    
+    console.log('Sorted players:', allRankedPlayers.length);
+    
+    rankedList.innerHTML = allRankedPlayers.map((player, index) => {
         const isTop3 = index < 3;
-        const displayName = stats.active_nickname || player;
+        const displayName = player.stats.active_nickname || player.name;
+        const isInMatch = players.includes(player.name);
         
         return `
-            <div class="ranked-player-item">
+            <div class="ranked-player-item ${isInMatch ? 'in-match' : ''}" onclick="togglePlayerInMatch('${player.name}')" style="cursor: pointer;">
                 <div class="rank-number ${isTop3 ? 'top3' : ''}">${index + 1}</div>
                 <div class="ranked-player-info">
-                    <div class="ranked-player-name">${displayName}</div>
+                    <div class="ranked-player-name">
+                        ${displayName}
+                        ${isInMatch ? '<span class="match-indicator">●</span>' : ''}
+                    </div>
                     <div class="ranked-player-stats">
                         <span class="stat-item">
-                            <span class="stat-kd">${stats.average_kd.toFixed(2)}</span> K/D
+                            <span class="stat-kd">${player.stats.average_kd.toFixed(2)}</span> K/D
                         </span>
                         <span class="stat-item">
-                            <span class="stat-games">${stats.games_played}</span> games
+                            <span class="stat-games">${player.stats.games_played}</span> games
                         </span>
                     </div>
                 </div>
             </div>
         `;
     }).join('');
+}
+
+function togglePlayerInMatch(playerName) {
+    const isCurrentlyInMatch = players.includes(playerName);
+    
+    if (isCurrentlyInMatch) {
+        // Remove from match
+        players = players.filter(p => p !== playerName);
+    } else {
+        // Add to match
+        players.push(playerName);
+    }
+    
+    updatePlayersList();
+    updateRankedPlayersList();
+    
+    // Save to Supabase if enabled
+    if (isSupabaseEnabled) {
+        savePlayers(players);
+    }
 }
 
 function shuffleArray(array) {
@@ -511,6 +681,7 @@ async function clearAll() {
     if (confirm('Are you sure you want to clear all players?')) {
         players = [];
         updatePlayersList();
+        updateRankedPlayersList(); // Update rankings to remove in-match indicators
         document.getElementById('teamsSection').classList.remove('show');
         
         // Clear from Supabase if enabled
