@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CS Team Selector</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <div class="main-layout">
+        <div class="main-content">
+            <h1>🎮 Smederevski Kanter</h1>
+            
+            <div class="input-section">
+            <h2>Add Players</h2>
+            <div class="input-group">
+                <input type="text" id="playerInput" placeholder="Enter player name" />
+                <button onclick="addPlayer()">Add Player</button>
+            </div>
+            
+            <div class="players-list">
+                <h3>Players (<span id="playerCount">0</span>)</h3>
+                <ul id="playersList"></ul>
+            </div>
+            
+            <div class="action-buttons">
+                <button onclick="generateTeams()" class="generate-btn">Generate Teams</button>
+                <button onclick="clearAll()" class="clear-btn">Clear All</button>
+                <button onclick="syncWithSupabase()" class="sync-btn" id="syncBtn">Sync with Cloud</button>
+            </div>
+        </div>
+
+        <div class="teams-section" id="teamsSection">
+            <div class="team terrorist-team">
+                <h2>🔴 Terrorist</h2>
+                <ul id="tTeam"></ul>
+            </div>
+            
+            <div class="team ct-team">
+                <h2>🔵 Counter-Terrorist</h2>
+                <ul id="ctTeam"></ul>
+            </div>
+        </div>
+
+        <!-- Match Results Entry -->
+        <div class="match-results-section" id="matchResultsSection">
+            <h2>📊 Enter Match Results</h2>
+            <div class="winner-selection">
+                <label>Winner:</label>
+                <button onclick="selectWinner('T')" id="winnerT" class="winner-btn">🔴 Terrorist</button>
+                <button onclick="selectWinner('CT')" id="winnerCT" class="winner-btn">🔵 CT</button>
+            </div>
+            
+            <div id="playerStatsInput"></div>
+            
+            <div class="action-buttons">
+                <button onclick="submitMatchResults()" class="submit-btn">Submit Results</button>
+                <button onclick="cancelMatchEntry()" class="cancel-btn">Cancel</button>
+            </div>
+        </div>
+
+        <!-- Player Statistics -->
+        <div class="stats-section" id="statsSection">
+            <h2>📈 Player Statistics</h2>
+            <div class="stats-controls">
+                <button onclick="showLeaderboard()" class="stats-btn">Show Leaderboard</button>
+            </div>
+            <div id="leaderboardContent"></div>
+        </div>
+    </div>
+
+    <div class="sidebar">
+        <div class="ranked-players">
+            <h2>🏆 Player Rankings</h2>
+            <div id="rankedPlayersList"></div>
+        </div>
+    </div>
+</div>
+
+    <script src="supabase-config.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
