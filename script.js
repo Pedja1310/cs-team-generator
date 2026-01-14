@@ -730,12 +730,5 @@ function updateSyncButton() {
     }
 }
 
-// Allow Enter key to add player
-document.getElementById('playerInput').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-        addPlayer();
-    }
-});
-
 // Initialize
 updatePlayersList();

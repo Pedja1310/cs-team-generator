@@ -4,7 +4,7 @@ const SUPABASE_URL = 'YOUR_SUPABASE_URL'; // e.g., https://xxxxx.supabase.co
 const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
 
 // Initialize Supabase client
-let supabase = null;
+let supabaseClient = null;
 
 function initSupabase() {
     try {
@@ -13,7 +13,7 @@ function initSupabase() {
             return false;
         }
         
-        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         console.log('✅ Supabase connected successfully');
         return true;
     } catch (error) {
@@ -24,10 +24,10 @@ function initSupabase() {
 
 // Save players to Supabase
 async function savePlayers(playersList) {
-    if (!supabase) return false;
+    if (!supabaseClient) return false;
     
     try {
-        const { data, error } = await supabase
+        const { data, error } = await supabaseClient
             .from('players')
             .upsert(playersList.map(name => {
                 const stats = playerStats[name] || {};
@@ -56,10 +56,10 @@ async function savePlayers(playersList) {
 
 // Load players from Supabase
 async function loadPlayers() {
-    if (!supabase) return [];
+    if (!supabaseClient) return [];
     
     try {
-        const { data, error } = await supabase
+        const { data, error } = await supabaseClient
             .from('players')
             .select('*')
             .order('created_at', { ascending: true });
@@ -75,10 +75,10 @@ async function loadPlayers() {
 
 // Get player statistics
 async function getPlayerStats(playerName) {
-    if (!supabase) return null;
+    if (!supabaseClient) return null;
     
     try {
-        const { data, error } = await supabase
+        const { data, error } = await supabaseClient
             .from('players')
             .select('*')
             .eq('name', playerName)
@@ -94,7 +94,7 @@ async function getPlayerStats(playerName) {
 
 // Save match results with K/D for each player
 async function saveMatchResults(matchData) {
-    if (!supabase) return false;
+    if (!supabaseClient) return false;
     
     try {
         // Update each player's statistics
@@ -115,7 +115,7 @@ async function saveMatchResults(matchData) {
             const newAverageKD = newTotalDeaths > 0 ? (newTotalKills / newTotalDeaths).toFixed(2) : newTotalKills.toFixed(2);
             
             // Update player stats
-            const { error: updateError } = await supabase
+            const { error: updateError } = await supabaseClient
                 .from('players')
                 .update({
                     total_kills: newTotalKills,
@@ -129,7 +129,7 @@ async function saveMatchResults(matchData) {
         }
         
         // Save match to history
-        const { error: historyError } = await supabase
+        const { error: historyError } = await supabaseClient
             .from('match_history')
             .insert([{
                 t_team: matchData.tTeam,
@@ -151,10 +151,10 @@ async function saveMatchResults(matchData) {
 
 // Get all players with stats sorted by K/D
 async function getPlayerLeaderboard() {
-    if (!supabase) return [];
+    if (!supabaseClient) return [];
     
     try {
-        const { data, error } = await supabase
+        const { data, error } = await supabaseClient
             .from('players')
             .select('*')
             .order('average_kd', { ascending: false });
@@ -169,10 +169,10 @@ async function getPlayerLeaderboard() {
 
 // Save generated teams to history
 async function saveTeamGeneration(tTeam, ctTeam) {
-    if (!supabase) return false;
+    if (!supabaseClient) return false;
     
     try {
-        const { data, error } = await supabase
+        const { data, error } = await supabaseClient
             .from('team_history')
             .insert([{
                 t_team: tTeam,
@@ -196,10 +196,10 @@ async function saveTeamGeneration(tTeam, ctTeam) {
 
 // Load team history
 async function loadTeamHistory(limit = 10) {
-    if (!supabase) return [];
+    if (!supabaseClient) return [];
     
     try {
-        const { data, error } = await supabase
+        const { data, error } = await supabaseClient
             .from('match_history')
             .select('*')
             .order('played_at', { ascending: false })
@@ -215,10 +215,10 @@ async function loadTeamHistory(limit = 10) {
 
 // Delete a player
 async function deletePlayer(playerName) {
-    if (!supabase) return false;
+    if (!supabaseClient) return false;
     
     try {
-        const { error } = await supabase
+        const { error } = await supabaseClient
             .from('players')
             .delete()
             .eq('name', playerName);
@@ -233,10 +233,10 @@ async function deletePlayer(playerName) {
 
 // Clear all players from database
 async function clearAllPlayers() {
-    if (!supabase) return false;
+    if (!supabaseClient) return false;
     
     try {
-        const { error } = await supabase
+        const { error } = await supabaseClient
             .from('players')
             .delete()
             .neq('name', ''); // Delete all records
