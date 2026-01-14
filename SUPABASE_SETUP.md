@@ -17,15 +17,21 @@ Nakon što se projekat kreira, idite na **SQL Editor** i pokrenite sledeće SQL 
 ### Tabela za igrače (sa statistikama):
 ```sql
 CREATE TABLE players (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  name TEXT UNIQUE NOT NULL, -- Jedinstveno ime igrača (pravo ime ili ID)
-  nicknames TEXT[] DEFAULT '{}', -- Lista nickova koje igrač koristi
-  active_nickname TEXT, -- Trenutno aktivni nickname
-  total_kills INTEGER DEFAULT 0,
-  total_deaths INTEGER DEFAULT 0,
+  id BIGSERIAL PRIMARY KEY,
+  name TEXT UNIQUE NOT NULL, -- Ime na koje je igrač registrovan
+  nicknames TEXT[] DEFAULT '{}', -- Lista nadimaka
+  active_nickname TEXT, -- Aktivni nadimak
+  total_kills INTEGER DEFAULT 0, -- Kill (ubijanja)
+  total_deaths INTEGER DEFAULT 0, -- Death (smrti)
   games_played INTEGER DEFAULT 0,
-  average_kd DECIMAL(10,2) DEFAULT 0.0,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+  average_kd DECIMAL(10,2) GENERATED ALWAYS AS (
+    CASE 
+      WHEN total_deaths = 0 THEN total_kills::DECIMAL 
+      ELSE ROUND((total_kills::DECIMAL / total_deaths::DECIMAL), 2)
+    END
+  ) STORED, -- Automatski generisan K/D koeficijent
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
 -- Enable Row Level Security
@@ -42,6 +48,19 @@ CREATE INDEX idx_players_average_kd ON players(average_kd DESC);
 
 -- Create index for nickname searches
 CREATE INDEX idx_players_nicknames ON players USING GIN(nicknames);
+
+-- Trigger za automatsko ažuriranje updated_at
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = TIMEZONE('utc'::text, NOW());
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+CREATE TRIGGER update_players_updated_at 
+BEFORE UPDATE ON players
+FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 ```
 
 ### Tabela za istoriju timova:

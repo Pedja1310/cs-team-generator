@@ -730,5 +730,185 @@ function updateSyncButton() {
     }
 }
 
+// Register New Player Modal Functions
+function openRegisterPlayerModal() {
+    document.getElementById('registerPlayerModal').style.display = 'flex';
+    document.getElementById('playerNameInput').focus();
+}
+
+function closeRegisterPlayerModal() {
+    document.getElementById('registerPlayerModal').style.display = 'none';
+    document.getElementById('registerPlayerForm').reset();
+}
+
+async function submitNewPlayer(event) {
+    event.preventDefault();
+    
+    const playerName = document.getElementById('playerNameInput').value.trim();
+    const nicknamesInput = document.getElementById('playerNicknamesInput').value.trim();
+    const initialKills = parseInt(document.getElementById('initialKillsInput').value) || 0;
+    const initialDeaths = parseInt(document.getElementById('initialDeathsInput').value) || 0;
+    
+    if (!playerName) {
+        alert('Player name is required');
+        return;
+    }
+    
+    // Check if player already exists
+    if (players.includes(playerName)) {
+        alert('Player with this name already exists!');
+        return;
+    }
+    
+    // Parse nicknames
+    const nicknames = nicknamesInput 
+        ? nicknamesInput.split(',').map(n => n.trim()).filter(n => n)
+        : [playerName];
+    
+    if (!nicknames.includes(playerName)) {
+        nicknames.unshift(playerName);
+    }
+    
+    // Calculate K/D
+    const kd = initialDeaths === 0 ? initialKills : (initialKills / initialDeaths).toFixed(2);
+    
+    // Add player to local arrays
+    players.push(playerName);
+    playerStats[playerName] = {
+        total_kills: initialKills,
+        total_deaths: initialDeaths,
+        games_played: 0,
+        average_kd: parseFloat(kd),
+        nicknames: nicknames,
+        active_nickname: playerName
+    };
+    
+    // Save to Supabase if enabled
+    if (isSupabaseEnabled) {
+        try {
+            const playerData = {
+                name: playerName,
+                nicknames: nicknames,
+                active_nickname: playerName,
+                total_kills: initialKills,
+                total_deaths: initialDeaths,
+                games_played: 0
+            };
+            
+            const { error } = await supabaseClient
+                .from('players')
+                .insert([playerData]);
+            
+            if (error) throw error;
+            
+            alert(`✅ Player "${playerName}" registered successfully!`);
+        } catch (error) {
+            alert('Failed to save player to database: ' + error.message);
+            // Remove from local arrays if database save failed
+            players = players.filter(p => p !== playerName);
+            delete playerStats[playerName];
+            return;
+        }
+    } else {
+        alert(`✅ Player "${playerName}" registered successfully!`);
+    }
+    
+    // Update UI
+    updatePlayersList();
+    updateRankedPlayersList();
+    populatePlayerModal();
+    closeRegisterPlayerModal();
+}
+
+// Add Stats Modal Functions
+function openAddStatsModal() {
+    const modal = document.getElementById('addStatsModal');
+    const select = document.getElementById('statsPlayerSelect');
+    
+    // Populate player select dropdown
+    select.innerHTML = '<option value="">-- Choose Player --</option>';
+    
+    const allPlayers = Object.keys(playerStats).sort();
+    allPlayers.forEach(playerName => {
+        const option = document.createElement('option');
+        option.value = playerName;
+        option.textContent = playerName;
+        select.appendChild(option);
+    });
+    
+    modal.style.display = 'flex';
+}
+
+function closeAddStatsModal() {
+    document.getElementById('addStatsModal').style.display = 'none';
+    document.getElementById('addStatsForm').reset();
+}
+
+async function submitPlayerStats(event) {
+    event.preventDefault();
+    
+    const playerName = document.getElementById('statsPlayerSelect').value;
+    const kills = parseInt(document.getElementById('statsKillsInput').value);
+    const deaths = parseInt(document.getElementById('statsDeathsInput').value);
+    
+    if (!playerName) {
+        alert('Please select a player');
+        return;
+    }
+    
+    if (kills < 0 || deaths < 0) {
+        alert('Kills and deaths must be non-negative numbers');
+        return;
+    }
+    
+    // Update local stats
+    if (!playerStats[playerName]) {
+        alert('Player not found');
+        return;
+    }
+    
+    playerStats[playerName].total_kills += kills;
+    playerStats[playerName].total_deaths += deaths;
+    playerStats[playerName].games_played += 1;
+    
+    // Recalculate K/D
+    const newKD = playerStats[playerName].total_deaths === 0 
+        ? playerStats[playerName].total_kills 
+        : (playerStats[playerName].total_kills / playerStats[playerName].total_deaths).toFixed(2);
+    
+    playerStats[playerName].average_kd = parseFloat(newKD);
+    
+    // Update in Supabase if enabled
+    if (isSupabaseEnabled) {
+        try {
+            const { error } = await supabaseClient
+                .from('players')
+                .update({
+                    total_kills: playerStats[playerName].total_kills,
+                    total_deaths: playerStats[playerName].total_deaths,
+                    games_played: playerStats[playerName].games_played
+                })
+                .eq('name', playerName);
+            
+            if (error) throw error;
+            
+            alert(`✅ Stats updated for ${playerName}!\nKills: +${kills}, Deaths: +${deaths}\nNew K/D: ${newKD}`);
+        } catch (error) {
+            alert('Failed to update stats in database: ' + error.message);
+            // Rollback local changes
+            playerStats[playerName].total_kills -= kills;
+            playerStats[playerName].total_deaths -= deaths;
+            playerStats[playerName].games_played -= 1;
+            return;
+        }
+    } else {
+        alert(`✅ Stats updated for ${playerName}!\nKills: +${kills}, Deaths: +${deaths}\nNew K/D: ${newKD}`);
+    }
+    
+    // Update UI
+    updateRankedPlayersList();
+    closeAddStatsModal();
+}
+
 // Initialize
 updatePlayersList();
